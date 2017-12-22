@@ -36,7 +36,8 @@
                         
                     </LinearGradientBrush>
                 </StackPanel.Background>
-                <Label Height="25" Name="lblFilesToDownload" Margin="5,0">Click on "Open File(s)" to select DLL(s) or EXE(s) for which the Symbol files (.PDB) are needed</Label>
+                <!--<Label Height="25" Name="lblFilesToDownload" Margin="5,0">Click on "Open File(s)" to select DLL(s) or EXE(s) for which the Symbol files (.PDB) are needed</Label>-->
+                <Label Height="25" Name="lblFilesToDownload" Margin="5,0">Select PE(s) for which the symbol files (.pdb) are needed</Label>
                 <Button Name="btnopenFile" Click="btnopenFile_Click">Open File(s)</Button>
                 <ListBox Name="lstFiles" Visibility="Hidden" Height="70" ScrollViewer.VerticalScrollBarVisibility="Auto">
                     

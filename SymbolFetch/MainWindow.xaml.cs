@@ -111,7 +111,7 @@ namespace SymbolFetch
             var fileDialog = new OpenFileDialog();
             var listOfFiles = new List<string>();
             fileDialog.Multiselect = true;
-            fileDialog.Filter = "DLL|*.dll|Executable Files| *.exe";
+            fileDialog.Filter = "Dynamic libraries|*.dll|Static libraries|*.lib|Executables|*.exe|Drivers|*.sys|All|*.*";
             if (fileDialog.ShowDialog() == true)
             {
                 foreach (var item in fileDialog.FileNames)
