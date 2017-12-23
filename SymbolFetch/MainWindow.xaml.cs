@@ -122,7 +122,7 @@ namespace SymbolFetch
                 pBarFileProgress.Value = 0;
 
                 lblStatus.Content = "Status: ";
-                lblFileSize.Content = "File Size: ";
+                lblFileSize.Content = "File size: ";
                 lblFileProgress.Content = "-";
                 lblTotalProgress.Content = "-";
 
@@ -219,12 +219,19 @@ namespace SymbolFetch
             try
             {
                 pBarFileProgress.Value = downloader.CurrentFilePercentage();
-                lblFileProgress.Content = String.Format("Downloaded {0} of {1} ({2}%)", ResourceDownloader.FormatSizeBinary(downloader.CurrentFileProgress), ResourceDownloader.FormatSizeBinary(downloader.CurrentFileSize), downloader.CurrentFilePercentage()) + String.Format(" - {0}/s", ResourceDownloader.FormatSizeBinary(downloader.DownloadSpeed));
+                lblFileProgress.Content = String.Format("Downloaded {0} of {1} ({2}%)", 
+                                                        ResourceDownloader.FormatSizeBinary(downloader.CurrentFileProgress), 
+                                                        ResourceDownloader.FormatSizeBinary(downloader.CurrentFileSize), 
+                                                        downloader.CurrentFilePercentage()) + 
+                                                        String.Format(" - {0}/s", ResourceDownloader.FormatSizeBinary(downloader.DownloadSpeed));
 
                 if (downloader.SupportsProgress)
                 {
                     pBarTotalProgress.Value = downloader.TotalPercentage();
-                    lblTotalProgress.Content = String.Format("Downloaded {0} of {1} ({2}%)", ResourceDownloader.FormatSizeBinary(downloader.TotalProgress), ResourceDownloader.FormatSizeBinary(downloader.TotalSize), downloader.TotalPercentage());
+                    lblTotalProgress.Content = String.Format("Downloaded {0} of {1} ({2}%)", 
+                                                             ResourceDownloader.FormatSizeBinary(downloader.TotalProgress), 
+                                                             ResourceDownloader.FormatSizeBinary(downloader.TotalSize), 
+                                                             downloader.TotalPercentage());
                 }
             }
             catch (Exception ex)
@@ -241,6 +248,7 @@ namespace SymbolFetch
         {
             lblStatus.Content = String.Format("Downloading {0}", downloader.CurrentFile.Path);
             lblFileSize.Content = String.Format("File size: {0}", ResourceDownloader.FormatSizeBinary(downloader.CurrentFileSize));
+            //lblFileSize.Content = String.Format("sdfsdfs");
             //lblSavingTo.Content = String.Format("Saving to {0}\\{1}", downloader.LocalDirectory, downloader.CurrentFile.Name);
         }
 

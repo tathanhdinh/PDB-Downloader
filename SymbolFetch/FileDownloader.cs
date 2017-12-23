@@ -41,6 +41,7 @@ namespace SymbolFetch
             {
                 this.Name = this.Path.Split("/"[0])[this.Path.Split("/"[0]).Length - 1];
             }
+
             public void SetNameUsingPath(string path)
             {
                 this.Name = path;
@@ -316,7 +317,7 @@ namespace SymbolFetch
         {
             string path = this.Files[fileNr].Path;
             path = ProbeWithUnderscore(path);
-            var webReq = (HttpWebRequest)System.Net.WebRequest.Create(path);
+            var webReq = (HttpWebRequest)WebRequest.Create(path);
             webReq.UserAgent = Constants.SymbolServer;
             if(headVerb)
                 webReq.Method = "HEAD";
@@ -327,7 +328,7 @@ namespace SymbolFetch
         {
             string path = this.Files[fileNr].Path;
             path = ProbeWithFilePointer(path);
-            var webReq = (HttpWebRequest)System.Net.WebRequest.Create(path);
+            var webReq = (HttpWebRequest)WebRequest.Create(path);
             webReq.UserAgent = Constants.SymbolServer;
             return (HttpWebResponse)webReq.GetResponseNoException();
         } 
@@ -402,7 +403,7 @@ namespace SymbolFetch
         {
             bool headVerb = false;
             m_currentFileSize = 0;
-            bool fileptr = false;
+            bool filePtr = false;
             fireEventFromBgw(Event.FileDownloadAttempting);
 
             FileInfo file = this.Files[fileNr];
@@ -424,30 +425,51 @@ namespace SymbolFetch
 
             try
             {
-                webReq = (HttpWebRequest)System.Net.WebRequest.Create(downloadUrl);
+                webReq = (HttpWebRequest)WebRequest.Create(downloadUrl);
                 webReq.UserAgent = Constants.SymbolServer;
-                webResp = (HttpWebResponse)webReq.GetResponseNoException();
+                webResp = webReq.GetResponseNoException();
                 if (webResp.StatusCode == HttpStatusCode.NotFound)
                 {
                     webResp = Retry(fileNr, headVerb);
-
-                    if (webResp.StatusCode == HttpStatusCode.OK)
+                    switch (webResp.StatusCode)
                     {
-                        file.IsCompressed = true;
-                        size = webResp.ContentLength;
+                        case HttpStatusCode.OK:
+                            file.IsCompressed = true;
+                            size = webResp.ContentLength;
+                            break;
+
+                        case HttpStatusCode.NotFound:
+                            webResp = RetryFilePointer(fileNr);
+                            filePtr = true;
+
+                            if (webResp.StatusCode != HttpStatusCode.OK)
+                            {
+                                if (!FailedFiles.ContainsKey(file.Name))
+                                    FailedFiles.Add(file.Name, " - " + webResp.StatusCode + "  " + webResp.StatusDescription);
+                            }
+                            break;
+
+                        default:
+                            break;
                     }
 
-                    if (webResp.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        webResp = RetryFilePointer(fileNr);
-                        fileptr = true;
-                    }
+                    //if (webResp.StatusCode == HttpStatusCode.OK)
+                    //{
+                    //    file.IsCompressed = true;
+                    //    size = webResp.ContentLength;
+                    //}
 
-                    if (webResp.StatusCode != HttpStatusCode.OK)
-                    {
-                        if (!FailedFiles.ContainsKey(file.Name))
-                            FailedFiles.Add(file.Name, " - " + webResp.StatusCode + "  " + webResp.StatusDescription);
-                    }
+                    //if (webResp.StatusCode == HttpStatusCode.NotFound)
+                    //{
+                    //    webResp = RetryFilePointer(fileNr);
+                    //    fileptr = true;
+                    //}
+
+                    //if (webResp.StatusCode != HttpStatusCode.OK)
+                    //{
+                    //    if (!FailedFiles.ContainsKey(file.Name))
+                    //        FailedFiles.Add(file.Name, " - " + webResp.StatusCode + "  " + webResp.StatusDescription);
+                    //}
                 }
                 else if(webResp.StatusCode == HttpStatusCode.OK)
                     size = webResp.ContentLength;
@@ -458,14 +480,14 @@ namespace SymbolFetch
                 exc = ex;
                 WriteToLog(file.Name, exc);
             }
+
             if (webResp.StatusCode == HttpStatusCode.OK)
             {
                 Directory.CreateDirectory(dirPath);
                 
-                if (fileptr)
+                if (filePtr)
                 {
-                    string filePath = dirPath + "\\" +
-                        file.Name;
+                    var filePath = dirPath + "\\" + file.Name;
                     string srcFile = null;
                     FileStream reader;
                     size = ProcessFileSize(webResp, out srcFile);
@@ -474,8 +496,7 @@ namespace SymbolFetch
                     if (srcFile != null)
                     {
                         reader = new FileStream(srcFile, FileMode.Open, FileAccess.Read);
-                        writer = new FileStream(filePath,
-                            System.IO.FileMode.Create);
+                        writer = new FileStream(filePath, FileMode.Create);
 
                         //   DownloadFile(srcFile, filePath);
                         fireEventFromBgw(Event.FileDownloadStarted);
@@ -516,10 +537,10 @@ namespace SymbolFetch
                     {
                         file.Name = ProbeWithUnderscore(file.Name);
                     }
-                    string filePath = dirPath + "\\" +
-                        file.Name;
-                    writer = new FileStream(filePath,
-                        System.IO.FileMode.Create);
+                    var filePath = dirPath + "\\" + file.Name;
+                    writer = new FileStream(filePath, System.IO.FileMode.Create);
+
+                    fireEventFromBgw(Event.FileDownloadStarted);
 
                     if (exc != null)
                     {
