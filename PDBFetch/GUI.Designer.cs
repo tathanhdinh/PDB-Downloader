@@ -45,7 +45,7 @@
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnDownload = new System.Windows.Forms.Button();
             this.statusStripMain = new System.Windows.Forms.StatusStrip();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabelMain = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorkerMain = new System.ComponentModel.BackgroundWorker();
             this.layoutMainInformation.SuspendLayout();
             this.grpFileProgress.SuspendLayout();
@@ -241,18 +241,19 @@
             // statusStripMain
             // 
             this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel1});
+            this.toolStripStatusLabelMain});
             this.statusStripMain.Location = new System.Drawing.Point(0, 508);
             this.statusStripMain.Name = "statusStripMain";
             this.statusStripMain.Size = new System.Drawing.Size(506, 22);
             this.statusStripMain.TabIndex = 2;
             this.statusStripMain.Text = "statusStrip1";
             // 
-            // toolStripStatusLabel1
+            // toolStripStatusLabelMain
             // 
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(109, 17);
-            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            this.toolStripStatusLabelMain.Name = "toolStripStatusLabelMain";
+            this.toolStripStatusLabelMain.Size = new System.Drawing.Size(125, 17);
+            this.toolStripStatusLabelMain.Text = "toolStripStatusLabelMain";
+            this.toolStripStatusLabelMain.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // backgroundWorkerMain
             // 
@@ -306,7 +307,7 @@
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnDownload;
         private System.Windows.Forms.StatusStrip statusStripMain;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelMain;
         private System.ComponentModel.BackgroundWorker backgroundWorkerMain;
     }
 }

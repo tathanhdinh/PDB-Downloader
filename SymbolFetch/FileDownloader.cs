@@ -412,7 +412,7 @@ namespace SymbolFetch
 
             Byte[] readBytes = new Byte[this.PackageSize];
             Int32 currentPackageSize;
-            System.Diagnostics.Stopwatch speedTimer = new System.Diagnostics.Stopwatch();
+            Stopwatch speedTimer = new Stopwatch();
             Int32 readings = 0;
             Exception exc = null;
 
@@ -488,9 +488,8 @@ namespace SymbolFetch
                 if (filePtr)
                 {
                     var filePath = dirPath + "\\" + file.Name;
-                    string srcFile = null;
                     FileStream reader;
-                    size = ProcessFileSize(webResp, out srcFile);
+                    size = ProcessFileSize(webResp, out string srcFile);
                     m_currentFileSize = size;
 
                     if (srcFile != null)

@@ -40,6 +40,8 @@ namespace PDBFetch
 
         private ExecutionStatus executionStatus = ExecutionStatus.Stopped;
 
+        private Dictionary<string, string> badFiles = new Dictionary<string, string>();
+
         private void lblSelectFiles_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             if (executionStatus == ExecutionStatus.Stopped)
@@ -60,6 +62,23 @@ namespace PDBFetch
                         }
 
                         lstSelectedFiles.DataSource = selectedFiles;
+
+                        toolStripStatusLabelMain.Text = "Parsing selected file(s)...";
+                        foreach (string filePath in lstSelectedFiles.Items)
+                        {
+                            try
+                            {
+                                toolStripStatusLabelMain.Text = "Parsing " + filePath;
+                                var filePdbInfo = PeFilePdbInformation.ExtractPDBInformation(filePath);
+                                peFilePdbInfo[filePath] = filePdbInfo;
+                            }
+                            catch (PEParsingException expt)
+                            {
+                                //badFiles.Add(filePath, expt.Message());
+                                badFiles[filePath] = expt.Message;
+                            }
+                        }
+                        toolStripStatusLabelMain.Text = "Parsing selected file(s)...finished";
 
                         // show default
                         lblFileProgress.Text = "waiting for download...";
@@ -84,40 +103,55 @@ namespace PDBFetch
             }
         }
 
-        private class PEFilePDBInformation
-        {
-            public string PEFilePath { get; }
-            public string PDBFileName { get; } // null ternimated pdb file
-            public byte[] PDBGuid { get; } // 16 byte GUID
-            public uint PDBAge { get; } // dword Age
+        private Dictionary<string, PeFilePdbInformation> peFilePdbInfo = new Dictionary<string, PeFilePdbInformation>();
 
-            PEFilePDBInformation(string peFilePath, string pdbFileName, byte[] pdbGuid, uint pdbAge)
+        private class PeFilePdbInformation
+        {
+            //public string PEFilePath { get; }
+            public ulong PeFileSize { get; }
+            public bool Pe64Bit { get; }
+            public string PdbFileName { get; } // null ternimated pdb file
+            public byte[] PdbGuid { get; } // 16 byte GUID
+            public uint PdbAge { get; } // dword Age
+
+            PeFilePdbInformation(ulong peFileSize, bool pe64Bit, string pdbFileName, byte[] pdbGuid, uint pdbAge)
             {
-                PEFilePath = peFilePath;
-                PDBFileName = pdbFileName;
-                PDBGuid = pdbGuid;
-                PDBAge = pdbAge;
+                PeFileSize = peFileSize;
+                Pe64Bit = pe64Bit;
+                PdbFileName = pdbFileName;
+                PdbGuid = pdbGuid;
+                PdbAge = pdbAge;
             }
 
             static byte[] pdb20_cv_signature = { (byte)'N', (byte)'B', (byte)'1', (byte)'0' };
             static byte[] pdb70_cv_signature = { (byte)'R', (byte)'S', (byte)'D', (byte)'S' };
 
-            public static PEFilePDBInformation ExtractPDBInformation(string peFilePath)
+            public static PeFilePdbInformation ExtractPDBInformation(string peFilePath)
             {
+                var peFileSize = 0ul;
+                try
+                {
+                    peFileSize = (ulong)new FileInfo(peFilePath).Length;
+                }
+                catch (Exception)
+                {
+                    throw new PEParsingException("file cannot be accessed");
+                }
+
                 var peFile = new PeFile(peFilePath);
-                if (peFile.IsValidPeFile)
+                if (PeFile.IsPEFile(peFilePath))
                 {
                     var debugDir = peFile.ImageDebugDirectory;
                     if (null == debugDir)
                     {
-                        throw new PEParsingException("Debug directory does not exist");
+                        throw new PEParsingException("debug directory does not exist");
                     }
                     else
                     {
                         // dirty code: IMAGE_DEBUG_TYPE_CODEVIEW = 2
                         if (debugDir.Characteristics != 2)
                         {
-                            throw new PEParsingException("Bad debug characteristics");
+                            throw new PEParsingException("bad debug characteristics");
                         }
                         else
                         {
@@ -139,14 +173,23 @@ namespace PDBFetch
                                     // dirty code: CV_INFO_GUID + CV_INFO_AGE = 20
                                     //fileStream.Seek(20, SeekOrigin.Current);
                                     //return fileReader.ReadString();
+                                    var pe64Bit = peFile.Is64Bit;
                                     var guid = fileReader.ReadBytes(16);
                                     var age = fileReader.ReadUInt32();
-                                    var pdbFileName = fileReader.ReadString();
-                                    return new PEFilePDBInformation(peFilePath, pdbFileName, guid, age);
+                                    var extractedPdbFileName = fileReader.ReadString();
+                                    var pdbFileName = extractedPdbFileName.Split('\\').Last();
+                                    if (string.IsNullOrEmpty(pdbFileName))
+                                    {
+                                        throw new PEParsingException("empty PDB file name");
+                                    }
+                                    else
+                                    {
+                                        return new PeFilePdbInformation(peFileSize, pe64Bit, pdbFileName, guid, age);
+                                    }
                                 }
                                 else
                                 {
-                                    throw new PEParsingException("Bad CodeView signature");
+                                    throw new PEParsingException("bad CodeView signature");
                                 }
                             }
                         }
@@ -154,15 +197,15 @@ namespace PDBFetch
                 }
                 else
                 {
-                    throw new PEParsingException("Not a valid PE");
+                    throw new PEParsingException("invalid PE");
                 }
             }
         }
 
         private string BuildPDBUrl(string peFilePath)
         {
-            var pdbInfo = PEFilePDBInformation.ExtractPDBInformation(peFilePath);
-            return pdbInfo.PDBFileName;
+            var pdbInfo = PeFilePdbInformation.ExtractPDBInformation(peFilePath);
+            return pdbInfo.PdbFileName;
         }
 
         //private void btnStart_Click(object sender, EventArgs e)
@@ -182,7 +225,12 @@ namespace PDBFetch
 
         private void lstSelectedFiles_SelectedIndexChanged(object sender, EventArgs e)
         {
-
+            var selectedFilePath = lstSelectedFiles.SelectedItem.ToString();
+            //toolStripStatusLabelMain.Text = selectedFilePath;
+            if (badFiles.ContainsKey(selectedFilePath))
+            {
+                toolStripStatusLabelMain.Text = "Error: " + badFiles[selectedFilePath];
+            }
         }
 
         private enum ExecutionStatus
